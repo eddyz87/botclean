@@ -1,3 +1,6 @@
+;; should play this game:
+;;   https://www.hackerrank.com/challenges/botclean
+
 (defpackage :cleaner-bot
   (:use :common-lisp))
 
