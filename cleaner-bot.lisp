@@ -54,6 +54,9 @@
                              (cdr next-dirty)))
                      1))))
 
+(defmethod mcts:clone-state ((_ cleaner-bot-game) state)
+  state)
+
 (defmethod mcts:estimate-state-reward ((game cleaner-bot-game) state)
   (let ((actions (mcts:possible-actions game state)))
     (if (null actions)

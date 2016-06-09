@@ -6,6 +6,7 @@
   (:export :select-next-move
            :possible-actions
            :next-state
+           :clone-state
            :estimate-state-reward))
 
 (in-package :mcts)
@@ -36,6 +37,7 @@
 
 (defgeneric possible-actions (game state))
 (defgeneric next-state (game state action))
+(defgeneric clone-state (game state))
 (defgeneric estimate-state-reward (game state))
 
 (defvar *exploration-coefficient*)
@@ -53,7 +55,8 @@
     (loop while (< (get-internal-run-time) stop-time)
        do
          (multiple-value-bind (node state)
-             (find-best-nested-child root initial-state)
+             (find-best-nested-child
+              root (clone-state *game* initial-state))
            (backup node (estimate-state-reward *game* state))))
     (action
      (select-best-child root))))
