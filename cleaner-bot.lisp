@@ -78,3 +78,65 @@
             move))
      (mcts:estimate-state-reward game state)
      (moves-count state))))
+
+(defvar *game*)
+
+(defun brute-force-play (field)
+  (let* ((root-state (parse-field field))
+         (*game* (make-instance 'cleaner-bot-game))
+         (solution (brute-force-step root-state nil)))
+    (when solution
+      (values
+       (reverse (second solution))
+       (first solution)
+       (moves-count (third solution))))))
+
+(defun brute-force-step (state moves)
+  (let ((dirty-position-list (dirty-position-list state)))
+    (if (null dirty-position-list)
+        (list (mcts:estimate-state-reward *game* state)
+              moves
+              state)
+        (let ((best nil))
+          (loop
+             for i below (length dirty-position-list)
+             for move in dirty-position-list
+             do
+               (let* ((next-state (mcts:next-state *game* state i))
+                      (next (brute-force-step
+                             next-state (cons move moves))))
+                 (when (or (null best)
+                           (< (first best) (first next)))
+                   (setf best next))))
+          best))))
+
+(defun generate-field (size)
+  (let ((str 
+         (with-output-to-string (stream)
+           (loop for i below size do
+                (loop for j below size do
+                     (if (= 0 (random 3))
+                         (princ #\d stream)
+                         (princ #\- stream)))
+                (princ #\Newline stream)))))
+    (setf (aref str 0) #\b)
+    str))
+
+(defun do-correlation-test (runs size)
+  ;; TODO: estimate using some statistical tools like
+  ;;       std deviation?
+  (let ((brute-force-total-reward 0)
+        (mcts-total-reward 0))
+    (loop for i below runs
+       do
+         (let ((field (generate-field size)))
+           (incf brute-force-total-reward
+                 (nth-value 1 (brute-force-play field)))
+           (incf mcts-total-reward
+                 (nth-value 1 (play field)))))
+    (let ((brute-force-mean (/ brute-force-total-reward runs))
+          (mcts-mean (/ mcts-total-reward runs)))
+      (format t "Avg. expected value    : ~,3F~%" brute-force-mean)
+      (format t "Avg. actual value      : ~,3F~%" mcts-mean)
+      (format t "Avg. actual / expected : ~,3F~%"
+              (/ mcts-mean brute-force-mean)))))
