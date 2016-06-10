@@ -84,52 +84,64 @@
 (defun brute-force-play (field)
   (let* ((root-state (parse-field field))
          (*game* (make-instance 'cleaner-bot-game))
-         (solution (brute-force-step root-state nil)))
+         (solution (brute-force-step root-state nil nil)))
     (when solution
       (values
        (reverse (second solution))
        (first solution)
        (moves-count (third solution))))))
 
-(defun brute-force-step (state moves)
+(defun brute-force-step (state moves current-best)
   (let ((dirty-position-list (dirty-position-list state)))
-    (if (null dirty-position-list)
-        (list (mcts:estimate-state-reward *game* state)
-              moves
-              state)
-        (let ((best nil))
-          (loop
-             for i below (length dirty-position-list)
-             for move in dirty-position-list
-             do
-               (let* ((next-state (mcts:next-state *game* state i))
-                      (next (brute-force-step
-                             next-state (cons move moves))))
-                 (when (or (null best)
-                           (< (first best) (first next)))
-                   (setf best next))))
-          best))))
+    (cond
+      ((null dirty-position-list)
+       (list (mcts:estimate-state-reward *game* state)
+             moves
+             state))
+      (t
+       (let ((best current-best))
+         (loop
+            for i below (length dirty-position-list)
+            for move in dirty-position-list
+            do
+              (let* ((next-state (mcts:next-state *game* state i)))
+                (when (or (null best)
+                          (< (moves-count next-state)
+                             (moves-count (third best))))
+                  (let ((next (brute-force-step next-state
+                                                (cons move moves)
+                                                best)))
+                    (when (or (null best)
+                              (< (first best) (first next)))
+                      (setf best next))))))
+         best)))))
 
-(defun generate-field (size)
-  (let ((str 
-         (with-output-to-string (stream)
-           (loop for i below size do
-                (loop for j below size do
-                     (if (= 0 (random 3))
-                         (princ #\d stream)
-                         (princ #\- stream)))
-                (princ #\Newline stream)))))
+(defun generate-field (size dirty-num)
+  (let ((str (with-output-to-string (stream)
+               (loop for i below size do
+                    (loop for j below size do
+                         (princ #\- stream))
+                    (princ #\Newline stream)))))
     (setf (aref str 0) #\b)
+    (loop while (< 0 dirty-num)
+       do
+         (let* ((i (random size))
+                (j (random size))
+                (coord (+ (* i size) j)))
+           (when (eq (aref str coord) #\-)
+             (setf (aref str coord) #\d)
+             (decf dirty-num))))
+    
     str))
 
-(defun do-correlation-test (runs size)
+(defun do-correlation-test (runs size dirty-num)
   ;; TODO: estimate using some statistical tools like
   ;;       std deviation?
   (let ((brute-force-total-reward 0)
         (mcts-total-reward 0))
     (loop for i below runs
        do
-         (let ((field (generate-field size)))
+         (let ((field (generate-field size dirty-num)))
            (incf brute-force-total-reward
                  (nth-value 1 (brute-force-play field)))
            (incf mcts-total-reward
