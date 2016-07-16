@@ -6,13 +6,18 @@
            #:array-field
            #:width #:height
            #:make-pos #:pos-x #:pos-y
-           #:clone-field))
+           #:clone-field
+           #:pos-plus))
 
 (in-package :src/field)
 
 (defstruct pos
  x
  y)
+
+(defun pos-plus (pos dx dy)
+  (make-pos :x (+ dx (pos-x pos))
+            :y (+ dy (pos-y pos))))
 
 (defclass field ()
  ((width :reader width

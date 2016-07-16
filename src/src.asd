@@ -8,3 +8,5 @@
   :perform (test-op (o c)
                     (lisp-unit:run-tests :all :src/test/field)
                     (lisp-unit:run-tests :all :src/test/state)))
+
+(register-system-packages :spatial-trees '(:rectangles))

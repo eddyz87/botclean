@@ -5,6 +5,9 @@
 (ql:quickload 'lisp-unit)
 (ql:quickload 'cl-quickcheck)
 (ql:quickload 'alexandria)
+(ql:quickload 'cl-heap)
+(ql:quickload 'spatial-trees)
+(ql:quickload 'spatial-trees.nns)
 (in-package :cl-user)
 (asdf:initialize-source-registry '(:source-registry
                                    :inherit-configuration
