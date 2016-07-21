@@ -59,7 +59,9 @@
               root (clone-state *game* initial-state))
            (backup node (estimate-state-reward *game* state))))
     (action
-     (select-best-child root))))
+     ;; No exploration when selecting real action
+     (let ((*exploration-coefficient* 0))
+       (select-best-child root)))))
 
 (defun find-best-nested-child (node state)
   (with-slots (children unexplored-actions) node
